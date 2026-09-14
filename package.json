@@ -1,0 +1,14 @@
+{
+  "name": "cal",
+  "private": true,
+  "workspaces": [
+    "core",
+    "packages/*"
+  ],
+  "devDependencies": {
+    "@types/bun": "latest"
+  },
+  "peerDependencies": {
+    "typescript": "^5"
+  }
+}
