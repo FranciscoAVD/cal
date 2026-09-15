@@ -1,16 +1,58 @@
 import { Resource } from "@/lib/types";
 import { Service as ServiceContract } from "@/lib/service.types";
+import { Calendar } from "@f/calendar/lib/calendar.types";
 
 export namespace Event {
   // RFC 5545 RRULE
-  export type RecurrenceRule = string;
+  type RecurrenceRule = string;
+
+  /** Where the event takes place (in person, a video link, a phone number, etc). */
+  export type Location = {
+    type: string;
+    address?: string;
+    link?: string;
+  };
+
+  /** Color used to render the event in a calendar view, for light and dark themes. */
+  export type Color = {
+    light: string;
+    dark: string;
+  } | null;
+
+  /**
+   * Whether the event blocks time on the calendar.
+   * - `busy` - occupies the time (the default for most events)
+   * - `free` - doesn't occupy the time, so it's ignored by conflict/availability checks
+   */
+  export type BusyStatus = "busy" | "free";
+
+  /**
+   * Per-event visibility, independent of the calendar's own `visibility`.
+   * - `default` - inherit the containing calendar's visibility
+   */
+  export type Visibility = "default" | Calendar.Visibility;
+
+  export type AttendeeResponseStatus =
+    | "needsAction"
+    | "accepted"
+    | "declined"
+    | "tentative";
+
+  /** A participant on the event, identified by a system user or a bare email. */
+  export type Attendee = ({ userId: string } | { email: string }) & {
+    responseStatus: Event.AttendeeResponseStatus;
+  };
 
   type Base = {
     calendarId: string;
     userId: string;
     title: string;
     description?: string;
-    location?: string;
+    location?: Event.Location;
+    color?: Event.Color;
+    visibility?: Event.Visibility;
+    busyStatus: Event.BusyStatus;
+    attendees?: Event.Attendee[];
     recurrenceRule?: RecurrenceRule;
     // Present only on an exception event — one that overrides (or cancels)
     // a single occurrence of another event's recurrenceRule. The pair
@@ -41,8 +83,11 @@ export namespace Event {
     : never;
   type DistributivePartial<T> = T extends unknown ? Partial<T> : never;
 
-  export type CTX = {
+  type CTX = {
     userId: string;
+  };
+  type Options = {
+    expand: boolean;
   };
   type ID = Pick<Event, "id">;
   export type Insert = DistributiveOmit<
@@ -54,8 +99,12 @@ export namespace Event {
     get: (
       event: ID,
       ctx: CTX,
+      opts?: Options,
     ) => Promise<ServiceContract.Return<Event | null, ID>>;
-    getAll: (ctx: CTX) => Promise<ServiceContract.Return<Event[], ID>>;
+    getAll: (
+      ctx: CTX,
+      opts?: Options,
+    ) => Promise<ServiceContract.Return<Event[], ID>>;
     create: (
       event: Insert,
       ctx: CTX,

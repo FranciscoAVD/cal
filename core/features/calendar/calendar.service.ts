@@ -1,15 +1,16 @@
 import type { Calendar } from "@f/calendar/lib/calendar.types";
 import type { Storage } from "@/lib/storage.types";
 import { tryCatch } from "@/lib/utils";
+
 export function createCalendarService(
   storage: Storage.Adapter<Calendar>,
 ): Calendar.Service {
   return {
-    get: async ({ id }, { userId }, opts) => {
+    get: async (cal, ctx, opts) => {
       const [res, error] = await tryCatch(
         storage.select({
-          id: { eq: id },
-          userId: { eq: userId },
+          id: { eq: cal.id },
+          userId: { eq: ctx.userId },
           ...(opts && { visibility: { eq: opts.visibility } }),
         }),
       );
@@ -24,9 +25,12 @@ export function createCalendarService(
         data: res[0] ?? null,
       };
     },
-    getAll: async ({ userId }) => {
+    getAll: async (ctx, opts) => {
       const [res, error] = await tryCatch(
-        storage.select({ userId: { eq: userId } }),
+        storage.select({
+          userId: { eq: ctx.userId },
+          ...(opts && { visibility: opts.visibility }),
+        }),
       );
       if (error)
         return {

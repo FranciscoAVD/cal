@@ -3,8 +3,11 @@ import { Service as ServiceContract } from "@/lib/service.types";
 
 export namespace Calendar {
   export type Visibility = "public" | "private";
-  export type CTX = {
+  type CTX = {
     userId: string;
+  };
+  type Options = {
+    visibility: Visibility;
   };
   type ID = Pick<Calendar, "id">;
   export type Insert = Omit<
@@ -16,11 +19,12 @@ export namespace Calendar {
     get: (
       calendar: ID,
       ctx: CTX,
-      opts?: {
-        visibility: Visibility;
-      },
+      opts?: Options,
     ) => Promise<ServiceContract.Return<Calendar | null, ID>>;
-    getAll: (ctx: CTX) => Promise<ServiceContract.Return<Calendar[], ID>>;
+    getAll: (
+      ctx: CTX,
+      opts?: Options,
+    ) => Promise<ServiceContract.Return<Calendar[], ID>>;
     create: (
       calendar: Insert,
       ctx: CTX,
