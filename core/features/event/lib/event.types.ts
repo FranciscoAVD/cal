@@ -1,4 +1,4 @@
-import { Resource } from "@/lib/types";
+import { Resource, DistributiveOmit, DistributivePartial } from "@/lib/types";
 import { Service as ServiceContract } from "@/lib/service.types";
 import { Calendar } from "@f/calendar/lib/calendar.types";
 
@@ -75,14 +75,6 @@ export namespace Event {
     end: Date;
   };
 
-  // Applies Omit/Partial to each union member individually instead of
-  // collapsing to their shared keys, so variant-only fields (e.g. timezone)
-  // survive rather than silently disappearing from Insert/Update.
-  type DistributiveOmit<T, K extends PropertyKey> = T extends unknown
-    ? Omit<T, K>
-    : never;
-  type DistributivePartial<T> = T extends unknown ? Partial<T> : never;
-
   type CTX = {
     userId: string;
   };
@@ -96,11 +88,18 @@ export namespace Event {
   >;
   export type Update = DistributivePartial<Insert> & ID;
   export type Service = {
-    get: (
-      event: ID,
-      ctx: CTX,
-      opts?: Options,
-    ) => Promise<ServiceContract.Return<Event | null, ID>>;
+    get: {
+      (
+        event: ID,
+        ctx: CTX,
+        opts: Options & { expand: true },
+      ): Promise<ServiceContract.Return<Event[], ID>>;
+      (
+        event: ID,
+        ctx: CTX,
+        opts?: Options & { expand?: false },
+      ): Promise<ServiceContract.Return<Event | null, ID>>;
+    };
     getAll: (
       ctx: CTX,
       opts?: Options,

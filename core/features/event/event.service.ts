@@ -6,7 +6,7 @@ export function createEventService(
   storage: Storage.Adapter<Event>,
 ): Event.Service {
   return {
-    get: async (event, ctx, opts) => {
+    get: (async (event, ctx, opts) => {
       const [res, error] = await tryCatch(
         storage.select({
           id: {
@@ -25,14 +25,18 @@ export function createEventService(
             error,
           },
         };
+
       if (opts?.expand) {
         // expand events
-        // would change return type to array
+        return {
+          data: res,
+        };
       }
+
       return {
         data: res[0] ?? null,
       };
-    },
+    }) as Event.Service["get"],
     getAll: async (ctx, opts) => {
       const [res, error] = await tryCatch(
         storage.select({
@@ -47,6 +51,82 @@ export function createEventService(
           error: {
             kind: "storage",
             error,
+          },
+        };
+
+      return {
+        data: res,
+      };
+    },
+    create: async (event, { userId }) => {
+      const [res, error] = await tryCatch(storage.insert({ ...event, userId }));
+      if (error)
+        return {
+          error: {
+            kind: "storage",
+            error,
+          },
+        };
+
+      return {
+        data: res,
+      };
+    },
+    update: async ({ id, ...patch }, { userId }) => {
+      const [res, error] = await tryCatch(
+        storage.update(patch, {
+          id: {
+            eq: id,
+          },
+          userId: {
+            eq: userId,
+          },
+        }),
+      );
+
+      if (error)
+        return {
+          error: {
+            kind: "storage",
+            error,
+          },
+        };
+      if (!res)
+        return {
+          error: {
+            kind: "storage",
+            error: new Error("Event not found"),
+          },
+        };
+      return {
+        data: res,
+      };
+    },
+    delete: async ({ id }, { userId }) => {
+      const [res, error] = await tryCatch(
+        storage.delete({
+          id: {
+            eq: id,
+          },
+          userId: {
+            eq: userId,
+          },
+        }),
+      );
+
+      if (error)
+        return {
+          error: {
+            kind: "storage",
+            error,
+          },
+        };
+
+      if (!res)
+        return {
+          error: {
+            kind: "storage",
+            error: new Error("Event not found"),
           },
         };
 

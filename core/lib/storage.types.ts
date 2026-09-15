@@ -1,11 +1,14 @@
 import { Service } from "@/lib/service.types";
-import { Resource } from "@/lib/types";
+import { Resource, DistributiveOmit, DistributivePartial } from "@/lib/types";
 
 export namespace Storage {
   // Storage-layer concerns only (transactions, tracing, connection handles)
   export type CTX = {};
 
-  type Insert<R extends Resource> = Omit<R, "id" | "createdAt" | "updatedAt">;
+  export type Insert<R extends Resource> = DistributiveOmit<
+    R,
+    "id" | "createdAt" | "updatedAt"
+  >;
 
   type FilterOp<V> = V extends Date | number
     ? { eq?: V; ne?: V; in?: V[]; gt?: V; gte?: V; lt?: V; lte?: V }
@@ -19,7 +22,7 @@ export namespace Storage {
     select: (query: Q, ctx?: CTX) => Promise<R[]>;
     insert: (resource: Insert<R>, ctx?: CTX) => Promise<R>;
     update: (
-      patch: Partial<Insert<R>>,
+      patch: DistributivePartial<Insert<R>>,
       query: Q,
       ctx?: CTX,
     ) => Promise<R | null>;
